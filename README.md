@@ -7,4 +7,4 @@ Requires 3 files to be present:
   arch.dat: the amount of units per hidden layer (each line represents a new layer)
 Weights are output as weights.dat
 
-Based on Coursera Machine Learning assignment which is where the included data example is taken from 
+Data example is taken from Coursera Machine Learning course
