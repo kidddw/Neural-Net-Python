@@ -65,6 +65,8 @@ class Define_Data:
         self.X_test = X_tot[cv_n: ,:]
         self.Y_test = Y_tot[cv_n:,:]
         self.m_test = self.X_test.shape[0]
+        self.n = self.X_train.shape[1]
+        self.k = self.Y_train.shape[1]
 
     def import_data(self, x_fname, y_fname):
         """
@@ -103,36 +105,35 @@ class Define_Data:
         Xmat = np.matrix(arr)
         f.close()
 
-#        # read in Y data
-#        f=open(y_fname, 'rU')
-#        lines = f.read().splitlines()
-#        arr = [] 
-#        for i in range(len(lines)):
-#            row = []
-#            for num in lines[order[i]].split():
-#                row.append(float(num))
-#            arr.append(row)
-#        Ymat = np.matrix(arr)
-#        f.close()
-
-        # if y data is presented as integers ranging from 1 to number-of-classes
-
+        # read in Y data
         f=open(y_fname, 'rU')
         lines = f.read().splitlines()
-        yvec = []
+        arr = [] 
         for i in range(len(lines)):
-            num = float(lines[order[i]].split()[0])
-            yvec.append(int(num))
+            row = []
+            for num in lines[order[i]].split():
+                row.append(float(num))
+            arr.append(row)
+        Ymat = np.matrix(arr)
         f.close()
 
-        if len(yvec) != Xmat.shape[0]: 
-            print 'data length mismatch'
-            sys.exit()
-        m = len(yvec)
-        K = len(set(yvec))
-        Ymat = np.matrix(np.zeros((m, K)))
-        for i in range(m):
-            Ymat[i, (yvec[i] - 1)] = 1
+#        # if y data is presented as integers ranging from 1 to number-of-classes
+#        f=open(y_fname, 'rU')
+#        lines = f.read().splitlines()
+#        yvec = []
+#        for i in range(len(lines)):
+#            num = float(lines[order[i]].split()[0])
+#            yvec.append(int(num))
+#        f.close()
+
+#        if len(yvec) != Xmat.shape[0]: 
+#            print 'data length mismatch'
+#            sys.exit()
+#        m = len(yvec)
+#        K = len(set(yvec))
+#        Ymat = np.matrix(np.zeros((m, K)))
+#        for i in range(m):
+#            Ymat[i, (yvec[i] - 1)] = 1
 
         return Xmat, Ymat
 
@@ -144,7 +145,7 @@ def import_architecture(fname):
            fname: (string) name of architecture file
 
        Returns:
-           arch_vec: (list) list of length equal to number of hidden layers
+           arch_vec: (tuple) tuple of length equal to number of hidden layers
                value at each element is number of units in that hidden layer 
     """ 
     f = open(fname, 'rU')
@@ -153,7 +154,7 @@ def import_architecture(fname):
     for line in lines:
         if line[0] == '#': continue
         arch_vec.append(int(line))
-    return arch_vec
+    return tuple(arch_vec)
 
 
 def import_weights(arch, file_type):
@@ -272,36 +273,8 @@ def add_one(mat):
     return mat_ones
 
 
-#def cost_function(Theta_mat, data, lambd):
-#    """calculate the cost function for given theta matrices and lambda.
-#       Note: can be faster if not using trace
 
-#       Args: 
-#           Theta_mat: (list) of (numpy matrices) weights
-#           data: (Define_Data class) contains X and Y data
-#           lambd: (float) regression parameter
-
-#       Returns: 
-#            J: (float) cost function value    
-#    """
-#    b_reg = []  # Matrices for regularization inclusion
-#    L = len(Theta_mat) + 1
-#    for l in range(L):
-#        if l == 0: continue
-#        Theta = Theta_mat[l - 1]
-#        b_reg.append(np.identity(Theta.shape[1]))
-#        b_reg[l - 1][0, 0] = 0.0
-#    hyp = feed_forward(Theta_mat, data.X_train)[L - 1]
-#    J = (1.0 / data.m_train) * np.trace(-np.dot(np.transpose(data.Y_train), 
-#        np.log(hyp)) - np.dot(np.transpose(np.ones(data.Y_train.shape) - 
-#        data.Y_train), np.log(np.ones(hyp.shape) - hyp)))
-#    for l in range(L - 1):
-#        J = J + ((0.5 * lambd / data.m_train) *
-#            (np.trace(np.transpose(Theta_mat[l]) * Theta_mat[l] * b_reg[l])))
-#    return J
-
-
-def cost_function(Theta_mat, m, X_mat, Y_mat, lambd):
+def cost_function(Theta_mat, X_mat, Y_mat, lambd):
     """calculate the cost function for given theta matrices and lambda.
        Note: can be faster if not using trace
 
@@ -315,6 +288,7 @@ def cost_function(Theta_mat, m, X_mat, Y_mat, lambd):
        Returns: 
             J: (float) cost function value    
     """
+    m = X_mat.shape[0]
     b_reg = []  # Matrices for regularization inclusion
     L = len(Theta_mat) + 1
     for l in range(L):
@@ -332,15 +306,15 @@ def cost_function(Theta_mat, m, X_mat, Y_mat, lambd):
     return J
 
 
-def cost_function_vec(Theta_mat, data, lambd, arch):
+def cost_function_vec(Theta_mat, X_train, Y_train, lambd, arch):
     """Evaluate the cost function when given the weights as a column vector
        Note: assume only interested in training data
     """
-#    J = cost_function(rollup(Theta_mat, arch), data, lambd)
-    J = cost_function(rollup(Theta_mat, arch), data.m_train, data.X_train, data.Y_train, lambd)
+    m_train = X_train.shape[0]
+    J = cost_function(rollup(Theta_mat, arch), X_train, Y_train, lambd)
     with open('cost.dat', 'a') as file:
         file.write(str(J) + '\n')
-    output_results(rollup(Theta_mat, arch), data.X_train, data.Y_train)
+    output_results(rollup(Theta_mat, arch), X_train, Y_train)
     return J
 
 
@@ -370,7 +344,7 @@ def feed_forward(Theta_mat, X):
     return a
 
 
-def grad_cost_function(Theta_mat,data,lambd):
+def grad_cost_function(Theta_mat, X_train, Y_train, lambd):
     """calculate gradient of cost function with respect to Theta matrices for 
        given theta matrices and lambda via backpropagation
        Note: assume only interested in training data
@@ -383,17 +357,18 @@ def grad_cost_function(Theta_mat,data,lambd):
        Returns:
            Theta_grad: (list) of (numpy matrices)  
     """
+    m_train = X_train.shape[0]
     L = len(Theta_mat) + 1
     delta = [None] * L
     Delta = [None] * L
     # Feed forward training examples
-    a = feed_forward(Theta_mat, data.X_train)
+    a = feed_forward(Theta_mat, X_train)
     # backprop to define delta^(l) for hidden layers
     for ll in range(L):
         if ll == L - 1: continue
         l = L - ll - 1
         if l == L - 1: 
-            delta[l] = a[l] - data.Y_train
+            delta[l] = a[l] - Y_train
             continue
         A = delta[l + 1] * Theta_mat[l]
         B = sigmoid_grad(add_one(a[l - 1]) * np.transpose(Theta_mat[l - 1]))
@@ -407,17 +382,17 @@ def grad_cost_function(Theta_mat,data,lambd):
         Theta = Theta_mat[l]
         b_reg.append(np.identity(Theta.shape[1]))
         b_reg[l][0, 0] = 0.0
-        Theta_grad.append((1.0 / data.m_train) * Delta[l] + 
-                          (lambd / data.m_train) * Theta[l] * b_reg[l]) 
+        Theta_grad.append((1.0 / m_train) * Delta[l] + 
+                          (lambd / m_train) * Theta[l] * b_reg[l]) 
     return Theta_grad
 
 
-def grad_cost_function_vec(Theta_mat, data, lambd, arch): 
+def grad_cost_function_vec(Theta_mat, X_train, Y_train, lambd, arch): 
     """backpropagation when given Theta matrices as column vector"""
-    return unroll(grad_cost_function(rollup(Theta_mat, arch), data, lambd), arch)
+    return unroll(grad_cost_function(rollup(Theta_mat, arch), X_train, Y_train, lambd), arch)
 
 
-def grad_cost_function_fd(Theta_mat, data, lambd):
+def grad_cost_function_fd(Theta_mat, X_train, Y_train, lambd):
     """estimate gradient of cost function with respect to Theta matrices for 
        given theta matrices and lambda via finite difference
        Note: assume only interested in training data
@@ -431,6 +406,7 @@ def grad_cost_function_fd(Theta_mat, data, lambd):
            numgrad_mat: (list) of (numpy arrays) derivatives of cost function
                with respect to individual elements of the weight matrices
     """
+    m_train = X_train.shape[0]
     L = len(Theta_mat) + 1
     e = 0.0001
     numgrad_mat = []
@@ -444,11 +420,9 @@ def grad_cost_function_fd(Theta_mat, data, lambd):
             for j in range(Theta.shape[1]):
                 perturb[i, j] = e 
                 Theta_mat_temp[l] = Theta - perturb 
-#                loss1 = cost_function(Theta_mat_temp, data, lambd)
-                loss1 = cost_function(Theta_mat_temp, data.m_train, data.X_train, data.Y_train, lambd)
+                loss1 = cost_function(Theta_mat_temp, X_train, Y_train, lambd)
                 Theta_mat_temp[l] = Theta + perturb 
-#                loss2 = cost_function(Theta_mat_temp, data, lambd)
-                loss2 = cost_function(Theta_mat_temp, data.m_train, data.X_train, data.Y_train, lambd)
+                loss2 = cost_function(Theta_mat_temp, X_train, Y_train, lambd)
                 numgrad[i,j] = (loss2 - loss1) / (2 * e) 
                 perturb[i,j] = 0
         numgrad_mat.append(numgrad)
@@ -492,7 +466,7 @@ def rollup(vector,arch):
     return tens
 
 
-def output_results(Theta_mat, X, Y):
+def output_results(Theta_mat, X, Y, pred_type='std'):
     # Set threshold for prediction (typically 0.5)
     threshold = 0.5
     L = len(Theta_mat) + 1
@@ -500,24 +474,39 @@ def output_results(Theta_mat, X, Y):
     res = np.matrix(feed_forward(Theta_mat, X)[L - 1])
     prediction = np.zeros(res.shape)
 
-    # for one-vs-all comparison
-    maxvals = res.max(1)
-    for i in range(res.shape[0]):
-        for j in range(res.shape[1]):
-            if res[i, j] == maxvals[i]: prediction[i, j] = 1
-            else: prediction[i, j] = 0
+    if pred_type == 'ova':
+        # for one-vs-all comparison
+        maxvals = res.max(1)
+        for i in range(res.shape[0]):
+            for j in range(res.shape[1]):
+                if res[i, j] == maxvals[i]: prediction[i, j] = 1
+                else: prediction[i, j] = 0
 
-#    for i in range(res.shape[0]):
-#        for j in range(res.shape[1]):
-#            if res[i, j] >= threshold: prediction[i, j] = 1
-#            else: prediction[i, j] = 0
+    if pred_type == 'std':
+        # for standard classification
+        for i in range(res.shape[0]):
+            for j in range(res.shape[1]):
+                if res[i, j] >= threshold: prediction[i, j] = 1
+                else: prediction[i, j] = 0
 
     success_count = np.sum(np.all(np.equal(prediction, Y), axis = 1))
-    J = cost_function(Theta_mat, X.shape[0], X, Y, 0.0)
+    J = cost_function(Theta_mat, X, Y, 0.0)
     print 'success percentage: ', float(success_count) / Y.shape[0] * 100, 'Cost Function: ', J
-
-#    return (100 - float(success_count) / Y.shape[0] * 100)
     return J
+
+
+def make_prediction(Theta_mat, X):
+    # Set threshold for prediction (typically 0.5)
+    threshold = 0.5
+    L = len(Theta_mat) + 1
+    # Feed forward training examples
+    res = np.matrix(feed_forward(Theta_mat, X)[L - 1])
+    prediction = np.zeros(res.shape)
+    for i in range(res.shape[0]):
+        for j in range(res.shape[1]):
+            if res[i, j] >= threshold: prediction[i, j] = 1
+            else: prediction[i, j] = 0
+    return prediction
 
 
 def output_weights(Theta_mat, arch):
@@ -532,6 +521,80 @@ def output_weights(Theta_mat, arch):
     theta_out.close()
 
 
+
+class MLPClassifier():
+    """Define neural net architecture and parameters
+
+    Attributes:
+        lambda_reg:           regularization parameter, lambda
+        hidden_layer_sizes:   tuple where length is number of hidden layers, 
+                              number is number of hidden units
+        tol:                  tolerance for when to stop conjugate gradient
+        cg_solver:            options for conjugate gradient package:
+                              fmin_cg for optimize.fmin_cg
+                              nl_cg for cg.nonlinear_cg
+    """
+
+    def __init__(self, lambda_reg=1e-05, hidden_layer_sizes=(5, 2), tol=0.0001, cg_solver='fmin_cg'):
+        
+        self.lambda_reg = lambda_reg
+        self.hidden_layer_sizes = hidden_layer_sizes
+        self.tol = tol
+        if cg_solver != 'fmin_cg' and cg_solver != 'nl_cg':
+            raise NameError('name of conjugate gradient option must be fmin_cg or nl_cg')  
+        self.cg_solver = cg_solver
+        self.weights = None
+
+
+    def fit(self, x_data, y_data):
+        arch = ([x_data.shape[1]] + list(self.hidden_layer_sizes) + 
+            [y_data.shape[1]])
+        open('cost.dat', 'w').close()
+        theta_matrices = initialize_theta(arch,1.2)
+        args = (x_data, y_data, self.lambda_reg, arch)
+        if self.cg_solver == 'fmin_cg':
+            theta_matrices = rollup(optimize.fmin_cg(cost_function_vec, 
+                unroll(theta_matrices,arch), fprime = grad_cost_function_vec, 
+                args = args, gtol = self.tol), arch)
+        if self.cg_solver == 'nl_cg':
+            theta_matrices = rollup(cg.nonlinear_cg(cost_function_vec, 
+                unroll(theta_matrices, arch), grad_cost_function_vec, args), arch)
+        self.weights = theta_matrices
+        output_weights(theta_matrices, arch)
+
+
+    def read_weights(self, m, k):
+        arch = ([m] + list(self.hidden_layer_sizes) + [k])
+        theta_matrices = import_weights(arch, 2)
+        self.weights = theta_matrices
+
+
+    def cost(self, x, y):
+        if self.weights == None:
+            raise ValueError('neural net weights have not been declared. Use fit or read_weights') 
+        return output_results(self.weights, x, y, pred_type='std')
+
+
+    def predict(self, x, threshold=0.5): 
+        """ return prediction vector for input features """
+        if self.weights == None:
+            raise ValueError('neural net weights have not been declared. Use fit or read_weights')   
+        L = len(self.weights) + 1
+        # Feed forward training examples
+        res = np.matrix(feed_forward(self.weights, x)[L - 1])
+        prediction = np.zeros(res.shape)
+        for i in range(res.shape[0]):
+            for j in range(res.shape[1]):
+                if res[i, j] >= threshold: prediction[i, j] = 1
+                else: prediction[i, j] = 0
+        return prediction[0]
+
+
+
+
+
+
+
 def main():
 
     if len(sys.argv) != 2:
@@ -541,83 +604,53 @@ def main():
         sys.exit(1)
     run_type = int(sys.argv[1])
 
-    perc = [0.6, 0.2, 0.2]
-#    perc = [1.0, 0.0, 0.0]
-    mydata = Define_Data('training_x.dat', 'training_y.dat', perc)
-    arch = ([mydata.X_train.shape[1]] + import_architecture('arch.dat') + 
-            [mydata.Y_train.shape[1]])
-    lambda_reg = 0.5
-    gtol_setting = 0.005
-
+    
 
     # Train weights from training set data
     if run_type == 1:
-        open('cost.dat', 'w').close()
-        Theta_matrices = initialize_theta(arch,1.2)
-        args = (mydata, lambda_reg, arch)
-        # scipy conjugate gradient
-        Theta_matrices = rollup(optimize.fmin_cg(cost_function_vec, 
-            unroll(Theta_matrices,arch), fprime = grad_cost_function_vec, 
-            args = args, gtol = gtol_setting), arch)
-        # home made conjugate gradient
-    #    Theta_matrices = rollup(cg.nonlinear_cg(cost_function_vec, 
-    #        unroll(Theta_matrices, arch), grad_cost_function_vec, args), arch)
+        mydata = Define_Data('training_x.dat', 'training_y.dat', perc = [1.0, 0.0, 0.0])
+        clf = MLPClassifier(lambda_reg=(10.0**0.5), hidden_layer_sizes=(250,), tol=0.005, cg_solver='fmin_cg')
+        clf.fit(mydata.X_train, mydata.Y_train)
         print
-        if mydata.m_train > 0:
-            print 'Training set'
-            output_results(Theta_matrices, mydata.X_train, mydata.Y_train)
-        if mydata.m_CV > 0:
-            print 'Cross-Validation set'
-            output_results(Theta_matrices, mydata.X_CV, mydata.Y_CV)
-        if mydata.m_test > 0:
-            print 'Test set'
-            output_results(Theta_matrices, mydata.X_test, mydata.Y_test)
-        output_weights(Theta_matrices, arch)
+        print 'Final Cost Function '
+        clf.cost(mydata.X_train, mydata.Y_train)
 
 
     # Print diagnostic values for cross validation and test sets from 
     # prexisting weights
     if run_type == 2:
-        Theta_matrices = import_weights(arch, 2)
+        mydata = Define_Data('training_x.dat', 'training_y.dat', perc = [0.6, 0.2, 0.2])       
+        clf = MLPClassifier(lambda_reg=(10.0**0.5), hidden_layer_sizes=(250,), tol=0.005, cg_solver='fmin_cg')
+        clf.read_weights(self, mydata.n, mydata.k)
         print 'Training set'
-        output_results(Theta_matrices, mydata.X_train, mydata.Y_train)
+        clf.cost(mydata.X_train, mydata.Y_train)
         print 'Cross-Validation set'
-        output_results(Theta_matrices, mydata.X_CV, mydata.Y_CV)
+        clf.cost(mydata.X_CV, mydata.Y_CV)
         print 'Test set'
-        output_results(Theta_matrices,mydata.X_test, mydata.Y_test)
+        clf.cost(mydata.X_test, mydata.Y_test)
 
 
     # Print diagnostic curve for regularization parameter lambda
-    if run_type == 3: 
-        lambd_n = 10
-        lambd_a = -4.0
-#        lambd_a = -1.0
-        lambd_b = 2.0
-#        lambd_b = 1.0
-        lambda_arr = []
+    if run_type == 3:
+        mydata = Define_Data('training_x.dat', 'training_y.dat', perc = [0.6, 0.2, 0.2])
+        lambd_n = 10 
+        exp_a = -4.0
+        exp_b = 2.0
+        sep = (exp_b - exp_a) / (lambd_n - 1)
+        exp_gen = (elem * sep + exp_a for elem in range(lambd_n))
         train_curve = [] 
         CV_curve = []
         test_curve = []
         for i in range(lambd_n):
-            expon = lambd_a + (lambd_b - lambd_a) / (lambd_n - 1) * i
-            lambda_reg = 10 ** expon
-            lambda_arr.append(expon)
-            Theta_matrices = initialize_theta(arch, 1.2)
-            args = (mydata, lambda_reg, arch)
-            # scipy conjugate gradient
-            Theta_matrices = rollup(optimize.fmin_cg(cost_function_vec, 
-                unroll(Theta_matrices, arch), fprime = grad_cost_function_vec, 
-                args = args, gtol = gtol_setting), arch)
-            # home made conjugate gradient
-      #      Theta_matrices = rollup(cg.nonlinear_cg(cost_function_vec, 
-      #          unroll(Theta_matrices, arch), grad_cost_function_vec, 
-      #          args), arch)
-            train_curve.append(output_results(Theta_matrices, mydata.X_train, 
-                               mydata.Y_train))
-            CV_curve.append(output_results(Theta_matrices, mydata.X_CV, 
-                            mydata.Y_CV))
-            test_curve.append(output_results(Theta_matrices, mydata.X_test, 
-                              mydata.Y_test))
+            lambda_param = 10 ** next(exp_gen)
+            lambda_arr.append(lambda_param)
+            print lambda_param
+            clf = MLPClassifier(lambda_reg=lambda_param, hidden_layer_sizes=(250,), tol=0.005, cg_solver='fmin_cg')
+            clf.fit(mydata.X_train, mydata.Y_train)
+            train_curve.append(clf.cost(mydata.X_train, mydata.Y_train))
+            CV_curve.append(clf.cost(mydata.X_CV, mydata.Y_CV))
+            test_curve.append(clf.cost(mydata.X_test, mydata.Y_test))
+
         reg_out = open('regularization.dat', 'w')
         for i in range(lambd_n): 
             reg_out.write("{:10.6f}".format(lambda_arr[i]) + ' ' + 
