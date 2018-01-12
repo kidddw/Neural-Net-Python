@@ -7,6 +7,7 @@ Data example is taken from Coursera Machine Learning course
 
 For ann use class MLPClassifier (similar to scikit_learn).
 example:
+
     clf = MLPClassifier(lambda_reg=(1.0), hidden_layer_sizes=(250,), tol=0.005, cg_solver='fmin_cg')
     clf.fit(x_data, y_data)
     clf.predict(input_x)
