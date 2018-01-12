@@ -1,11 +1,6 @@
 # Neural-Net-Python
-Neural Net solver in Python:
+Neural Net classification package in Python:
 Uses backpropagation and conjugate gradient optimization in order to solve for the weights of a neural net. 
-Requires 3 files to be present:
-  training_x.dat: the data for x values
-  training_y.dat: the data for corresponding y values
-  arch.dat: the amount of units per hidden layer (each line represents a new layer)
-Weights are output as weights.dat
 
 Data example is taken from Coursera Machine Learning course
 
@@ -72,6 +67,25 @@ methods:
         outputs:
             [float]
                 cost fucntion value
-             
+                
+                
+Can be ran as standalone program with three run types passed in as integers 1, 2, or 
+3 as arguments.
+Requires 2 files to be present:
+    training_x.dat: the data for x values
+    training_y.dat: the data for corresponding y values 
+  
+run type 1: Train weights from training set data
+    Uses all of the data in training_x.dat as the training set and uses the fit method 
+    to determine weights
+run type 2: Print diagnostic values for cross validation and test sets from prexisting 
+    weights
+    Uses 60 % of training_x.dat as the training set, 20 % as the cross-validation set, 
+    and 20% as the test set
+run type 3: Print diagnostic curve for regularization parameter lambda
+    Prints and graphs the minimized cost after training as a function of the 
+    regularization parameter, lambda for each of the three sets. This functionality 
+    is used in order to determine the optimal value for lambda. 
+        
         
     
