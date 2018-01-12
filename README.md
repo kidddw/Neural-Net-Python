@@ -13,6 +13,7 @@ example:
     clf.predict(input_x)
         
 options for defining MLPClassifier class:
+
     lambda_reg: [float] [default = 1e-05] 
         regularization parameter (called alpha in scikit_learn)
     hidden_layer_sizes: [tuple of integers] [default = (5, 2)]
