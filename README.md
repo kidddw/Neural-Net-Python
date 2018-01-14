@@ -2,9 +2,6 @@
 Neural Net classification package in Python:
 Uses backpropagation and conjugate gradient optimization in order to solve for the weights of a neural net. 
 
-Data example is taken from Coursera Machine Learning course
-
-
 For ann use class MLPClassifier (similar to scikit_learn).
 example:
 
@@ -80,9 +77,10 @@ cost fucntion value.
                 
 Can be ran as standalone program with three run types passed in as integers 1, 2, or 
 3 as arguments.
-Requires 2 files to be present:
-    training_x.dat: the data for x values.
-    training_y.dat: the data for corresponding y values.
+Requires 3 files to be present:
+    param.inp: list of parameters to be read in (including the two following file names)
+    filename_x: the data for x values. filename_x can be any filename as specified in the param.inp file
+    filename_y: the data for y values. filename_y can be any filename as specified in the param.inp file
   
 run type 1: Train weights from training set data
     Uses all of the data in training_x.dat as the training set and uses the fit method 
@@ -95,6 +93,10 @@ run type 3: Print diagnostic curve for regularization parameter lambda
     Prints and graphs the minimized cost after training as a function of the 
     regularization parameter, lambda for each of the three sets. This functionality 
     is used in order to determine the optimal value for lambda. 
+    
+An example application is provided in the folder 'example'.     
+Data example is taken from Coursera Machine Learning course
+
         
         
     
