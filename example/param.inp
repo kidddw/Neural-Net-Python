@@ -1,0 +1,6 @@
+inputx training_x.dat
+inputy training_y.dat
+lambda 1.0
+tol 0.005
+cg_solver fmin_cg
+hiddenlayer1 25
