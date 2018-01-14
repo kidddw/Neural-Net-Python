@@ -563,8 +563,8 @@ class MLPClassifier():
         output_weights(theta_matrices, arch)
 
 
-    def read_weights(self, m, k):
-        arch = ([m] + list(self.hidden_layer_sizes) + [k])
+    def read_weights(self, n, k):
+        arch = ([n] + list(self.hidden_layer_sizes) + [k])
         theta_matrices = import_weights(arch, 2)
         self.weights = theta_matrices
 
@@ -604,12 +604,33 @@ def main():
         sys.exit(1)
     run_type = int(sys.argv[1])
 
-    
+    # read in parameters file
+    param_file = open('param.inp', 'w')
+    param = {}
+    with open('param.inp') as f:
+        for line in f:
+            (key, val) = line.split()
+            param[int(key)] = val
+    expected_keys = ['inputx', 'inputy', 'lambda', 'tol', 'cg_solver', 'hiddenlayer1'] 
+    for key in expected_keys:
+        if key not in param:
+            raise ValueError('missing ' key ' in param.inp')
+
+    # get hidden layer architecture
+    ind = 1
+    inputname = 'hiddenlayer1'
+    ann_arch_list = []
+    while inputname in param: 
+        ann_arch_list.append(param[inputname])
+        ind += 1
+        inputname = 'hiddenlayer' + str(ind)
+    ann_arch = tuple(ann_arch_list)
+
 
     # Train weights from training set data
     if run_type == 1:
-        mydata = Define_Data('training_x.dat', 'training_y.dat', perc = [1.0, 0.0, 0.0])
-        clf = MLPClassifier(lambda_reg=(10.0**0.5), hidden_layer_sizes=(250,), tol=0.005, cg_solver='fmin_cg')
+        mydata = Define_Data(param['inputx'], param['inputy'], perc = [1.0, 0.0, 0.0])
+        clf = MLPClassifier(lambda_reg=param['lambda'], hidden_layer_sizes=ann_arch, tol=param['tol'], cg_solver=param['cg_solver'])
         clf.fit(mydata.X_train, mydata.Y_train)
         print
         print 'Final Cost Function '
@@ -619,8 +640,8 @@ def main():
     # Print diagnostic values for cross validation and test sets from 
     # prexisting weights
     if run_type == 2:
-        mydata = Define_Data('training_x.dat', 'training_y.dat', perc = [0.6, 0.2, 0.2])       
-        clf = MLPClassifier(lambda_reg=(10.0**0.5), hidden_layer_sizes=(250,), tol=0.005, cg_solver='fmin_cg')
+        mydata = Define_Data(param['inputx'], param['inputy'], perc = [0.6, 0.2, 0.2])       
+        clf = MLPClassifier(lambda_reg=param['lambda'], hidden_layer_sizes=ann_arch, tol=param['tol'], cg_solver=param['cg_solver'])
         clf.read_weights(self, mydata.n, mydata.k)
         print 'Training set'
         clf.cost(mydata.X_train, mydata.Y_train)
@@ -631,21 +652,25 @@ def main():
 
 
     # Print diagnostic curve for regularization parameter lambda
+    for key in ['lambda_n', 'exp_a', 'exp_b']:
+        if key not in param:
+            raise ValueError('missing ' key ' in param.inp')
     if run_type == 3:
-        mydata = Define_Data('training_x.dat', 'training_y.dat', perc = [0.6, 0.2, 0.2])
-        lambd_n = 10 
-        exp_a = -4.0
-        exp_b = 2.0
+        mydata = Define_Data(param['inputx'], param['inputy'], perc = [0.6, 0.2, 0.2])
+        lambd_n = param['lambda_n'] 
+        exp_a = param['exp_a']
+        exp_b = param['exp_b']
         sep = (exp_b - exp_a) / (lambd_n - 1)
         exp_gen = (elem * sep + exp_a for elem in range(lambd_n))
         train_curve = [] 
         CV_curve = []
         test_curve = []
+        lambda_arr = []
         for i in range(lambd_n):
             lambda_param = 10 ** next(exp_gen)
             lambda_arr.append(lambda_param)
             print lambda_param
-            clf = MLPClassifier(lambda_reg=lambda_param, hidden_layer_sizes=(250,), tol=0.005, cg_solver='fmin_cg')
+            clf = MLPClassifier(lambda_reg=lambda_param, hidden_layer_sizes=ann_arch, tol=param['tol'], cg_solver=param['cg_solver'])
             clf.fit(mydata.X_train, mydata.Y_train)
             train_curve.append(clf.cost(mydata.X_train, mydata.Y_train))
             CV_curve.append(clf.cost(mydata.X_CV, mydata.Y_CV))
@@ -657,6 +682,7 @@ def main():
                 "{:10.6f}".format(train_curve[i]) + ' ' + 
                 "{:10.6f}".format(CV_curve[i]) + ' ' + 
                 "{:10.6f}".format(test_curve[i]) + '\n')
+        reg_out.close()
         plt.plot(lambda_arr, train_curve, label="Train")
         plt.plot(lambda_arr, CV_curve, label="Cross-Valid.")
         plt.legend(bbox_to_anchor = (0., 1.02, 1., .102), loc = 3, ncol = 2, 
